@@ -1,0 +1,143 @@
+Sub stockanalysis()
+
+'Loop through all worksheets
+For Each ws In Worksheets
+
+	'Define variables
+        Dim sumtable As Integer
+        Dim stockvolume As Double
+        Dim closeprice As Double
+        Dim openprice As Double
+        Dim yearlychange As Double
+        Dim percentchange As Double
+        Dim rowcounter As Double
+        Dim dmax As Double
+        Dim dmin As Double
+        Dim dmax2 As Double
+        
+        'Find last row to use in upcoming loop
+        LastRow = ws.Cells(Rows.Count, 1).End(xlUp).Row
+        
+	'Keep track of rows on summary table
+        sumtable = 2
+        
+	'Keep tracck of sum of stock volume
+        stockvolume = 0
+        
+	'Used to keep track of open price
+        rowcounter = 2
+        
+	'Sets percentage change column as percent
+        ws.Range("K:K").Style = "Percent"
+        
+	'Loop through rows
+        For i = 2 To LastRow
+            
+	    'Set headers for summary table
+            ws.Range("I1").Value = "Ticker"
+            ws.Range("J1").Value = "Yearly Change"
+            ws.Range("K1").Value = "Percent Change"
+            ws.Range("L1").Value = "Stock Volume"
+
+	    'If the ticker changes
+            If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+                
+		'Place ticker name in summary table
+                ws.Cells(sumtable, 9).Value = ws.Cells(i, 1).Value
+                
+                closeprice = ws.Cells(i, 6).Value
+                
+                openprice = ws.Cells(rowcounter, 3).Value
+
+                yearlychange = closeprice - openprice
+                
+               'Place yearly change in summary table
+                ws.Cells(sumtable, 10).Value = yearlychange
+                
+		'Conditional formating for if yearly change is negative or not
+                If ws.Cells(sumtable, 10).Value < 0 Then
+                    ws.Cells(sumtable, 10).Interior.ColorIndex = 3
+                    
+                Else
+                    ws.Cells(sumtable, 10).Interior.ColorIndex = 4
+                End If
+                 
+		'To account for undefined value of percent change, ie. if open price is 0.           
+                If openprice = 0 And closeprice = 0 Then
+                percentchange = 0
+                
+                ElseIf openprice = 0 And closeprice <> 0 Then
+                percentchange = 1
+                
+                Else
+                percentchange = yearlychange / openprice
+                
+                End If
+                
+		'Place percent change in summary table
+                ws.Cells(sumtable, 11).Value = percentchange
+                
+                'Sum stock volume
+                stockvolume = stockvolume + ws.Cells(i, 7).Value
+                
+		'Place stock volume in table
+                ws.Cells(sumtable, 12).Value = stockvolume
+                
+		'Reset stock volume to 0 for next ticker
+                stockvolume = 0
+                
+		'Record row number for the next ticker's open price
+                rowcounter = i + 1
+                
+		'Move to the next row of summary table
+                sumtable = sumtable + 1
+            Else
+                stockvolume = stockvolume + ws.Cells(i, 7).Value
+            
+            End If
+            
+        Next i
+        
+        'Find last row of summary table
+        tablelastrow = ws.Cells(Rows.Count, 9).End(xlUp).Row
+        
+	'Place headers
+        ws.Range("O2").Value = "Greatest % Increase"
+        ws.Range("O3").Value = "Greatest % Decrease"
+        ws.Range("O4").Value = "Greatest Total Volume"
+        ws.Range("P1").Value = "Ticker"
+        ws.Range("Q1").Value = "Value"
+        
+ 	'Find maximum in percent change row
+        dmax = Application.WorksheetFunction.Max(ws.Range("K:K"))
+        
+	'Find minimum in percent change row
+        dmin = Application.WorksheetFunction.Min(ws.Range("K:K"))
+        
+	'Find maximum stock volume
+        dmax2 = Application.WorksheetFunction.Max(ws.Range("L:L"))
+        
+        ws.Range("Q2:Q3").Style = "Percent"
+        
+	'Loop through table to find maxes and min
+        For i = 2 To tablelastrow
+        
+            If ws.Cells(i, 11) = dmax Then
+                ws.Range("P2").Value = ws.Cells(i, 9).Value
+                ws.Range("Q2").Value = ws.Cells(i, 11).Value
+            End If
+            
+            If ws.Cells(i, 11) = dmin Then
+                ws.Range("P3").Value = ws.Cells(i, 9).Value
+                ws.Range("Q3").Value = ws.Cells(i, 11).Value
+            End If
+            
+            If ws.Cells(i, 12) = dmax2 Then
+                ws.Range("P4").Value = ws.Cells(i, 9).Value
+                ws.Range("Q4").Value = ws.Cells(i, 12).Value
+            End If
+        Next i
+        
+    Next ws
+
+End Sub
